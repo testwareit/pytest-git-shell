@@ -1,0 +1,1 @@
+docker build --tag pytest-git-shell:0.1 .
