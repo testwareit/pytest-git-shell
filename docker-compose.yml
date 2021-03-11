@@ -2,7 +2,6 @@ version: '3'
 
 services:
   pytest:
-    tty: true # Enables debugging capabilities when attached to this container.
-    image: 'pytest-git-shell:0.1'
+    image: 'pytest-git-shell:0.2'
     ports:
       - '8100:22'
