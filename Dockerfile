@@ -1,24 +1,28 @@
-FROM python:latest
+FROM python:3.7.10
 
-RUN pip install docker-py feedparser nosexcover prometheus_client pycobertura pylint pytest pytest-cov requests setuptools sphinx
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install openssh-server sudo
 
-RUN apt-get update
+ADD entry.sh /entry.sh
+ADD run.sh /run.sh
 
-RUN apt-get install -y openssh-server
-RUN mkdir /var/run/sshd
+RUN chmod +x /*.sh
+RUN mkdir -p /var/run/sshd && sed -i "s/UsePrivilegeSeparation.*/UsePrivilegeSeparation no/g" /etc/ssh/sshd_config \
+  && sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+  && touch /root/.Xauthority \
+  && true
 
-RUN echo root:root|chpasswd
+## Set a default user. Available via runtime flag `--user docker`
+## Add user to 'staff' group, granting them write privileges to /usr/local/lib/R/site.library
+## User should also have & own a home directory, but also be able to sudo
+RUN useradd docker \
+        && passwd -d docker \
+        && mkdir /home/docker \
+        && chown docker:docker /home/docker \
+        && addgroup docker staff \
+        && addgroup docker sudo \
+        && true
 
-RUN sed -ri 's/^#?PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-RUN sed -ri 's/^#?PasswordAuthentication\s+.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
-
-RUN mkdir /root/.ssh
-
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-	
+RUN pip install docker-py pylint pytest pytest-xdist pytest-cloud requests setuptools
 
 EXPOSE 22
-
-CMD ["/usr/sbin/sshd", "-D"]
+CMD ["/run.sh"]

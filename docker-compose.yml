@@ -2,6 +2,8 @@ version: '3'
 
 services:
   pytest:
-    image: 'pytest-git-shell:0.2'
+    image: 'testwareit/pytest-git-shell:0.3'
     ports:
       - '8100:22'
+    env_file:
+      - ./envs.env
